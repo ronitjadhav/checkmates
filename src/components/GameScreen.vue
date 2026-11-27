@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, provide, ref, watch } from 'vue'
+import { computed, onUnmounted, provide, ref, watch } from 'vue'
+import type { Color } from '../types'
 import type { Game } from '../composables/useGame'
 import { useWakeLock } from '../composables/useWakeLock'
 import ChessBoard from './ChessBoard.vue'
+import GameOver from './GameOver.vue'
 import PlayerPanel from './PlayerPanel.vue'
 import PromotionDialog from './PromotionDialog.vue'
 import TossReveal from './TossReveal.vue'
@@ -25,6 +27,15 @@ const showToss = ref(settings.value.colour === 'toss' && !props.game.hasHistory)
 watch(() => props.game.turn, () => {
   if (settings.value.rotate) setTimeout(() => { flipped.value = props.game.turn === 'b' }, 350)
 })
+// Let the last move land (and the mated king tip over) before the result card covers the board; undoing the move closes it.
+const showOver = ref(false)
+let overTimer: ReturnType<typeof setTimeout>
+watch(() => props.game.gameOver, over => {
+  clearTimeout(overTimer)
+  if (over) overTimer = setTimeout(() => { showOver.value = true }, 1100)
+  else showOver.value = false
+})
+onUnmounted(() => clearTimeout(overTimer))
 const top = computed(() => (flipped.value ? 'w' : 'b'))
 const bottom = computed(() => (flipped.value ? 'b' : 'w'))
 // placed by grid area, so the same three elements work stacked and side by side
@@ -32,6 +43,10 @@ const sides = computed(() => [
   { area: 'far', far: true, color: top.value },
   { area: 'near', far: false, color: bottom.value },
 ] as const)
+
+function resign(color: Color) {
+  if (confirm(`${props.game.names[color]} resigns?`)) props.game.resign(color)
+}
 
 function quit() {
   if (props.game.hasHistory && !props.game.gameOver && !confirm('Abandon this game?')) return
@@ -59,6 +74,7 @@ function quit() {
         :can-undo="game.hasHistory"
         @undo="game.undo()"
         @flip="flipped = !flipped"
+        @resign="resign(side.color)"
         @quit="quit"
       />
       <div class="board-area">
@@ -68,8 +84,10 @@ function quit() {
           :targets="game.targets"
           :last-move="game.lastMove"
           :checked-king="game.checkedKing"
+          :fallen="game.fallenKing"
           :flipped="flipped"
           :hints="settings.hints"
+          :drag="settings.drag !== false"
           :turn="game.gameOver ? undefined : game.turn"
           :face-to-face="faceToFace"
           @tap="sq => game.tap(sq, c => promo!.ask(c))"
@@ -77,6 +95,7 @@ function quit() {
       </div>
     </div>
     <PromotionDialog ref="promo" />
+    <GameOver v-if="showOver && game.outcome" :outcome="game.outcome" :names="game.names" :status="game.status" :face-to-face="faceToFace" @close="showOver = false" @again="emit('quit')" />
     <TossReveal v-if="showToss" :white="game.names.w" :black="game.names.b" :face-to-face="faceToFace" @close="showToss = false" />
   </section>
 </template>
@@ -84,13 +103,13 @@ function quit() {
 <style scoped>
 /* Upright screen: far panel, board, near panel in a column as wide as the board. --chrome is the height of everything but the board. */
 .playfield {
-  --chrome: 240px;
+  --chrome: 228px;
   display: grid;
   gap: 8px;
   grid-template-areas: "far" "board" "near";
   width: min(100%, 100dvh - var(--chrome));
 }
-.playfield.face-to-face { --chrome: 350px; }
+.playfield.face-to-face { --chrome: 326px; }
 .far { grid-area: far; }
 .board-area { grid-area: board; }
 .near { grid-area: near; }

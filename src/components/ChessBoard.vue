@@ -11,8 +11,12 @@ const props = defineProps<{
   targets: Map<Square, Target>
   lastMove?: { from: Square; to: Square }
   checkedKing?: Square
+  /** King that has lost (mated or resigned): it tips over. */
+  fallen?: Square
   flipped: boolean
   hints: boolean
+  /** Pieces can be dragged; off leaves tap-to-move only. */
+  drag?: boolean
   /** Side allowed to move; undefined when the game is over. Only its pieces can be dragged. */
   turn?: Piece['color']
   /** Players sit opposite each other: coordinates on all four sides, and the far player drags from their side. */
@@ -31,7 +35,7 @@ const squareAtPoint = (x: number, y: number) =>
   document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-sq]')?.dataset.sq as Square | undefined
 
 function onDown(e: PointerEvent) {
-  if (pending || e.button !== 0) return
+  if (!props.drag || pending || e.button !== 0) return
   const from = squareAtPoint(e.clientX, e.clientY)
   const piece = from && props.pieces.get(from)
   if (!from || !piece || piece.color !== props.turn) return
@@ -98,6 +102,7 @@ const cells = computed(() =>
       selected: sq === props.selected,
       last: sq === props.lastMove?.from || sq === props.lastMove?.to,
       check: sq === props.checkedKing,
+      mate: sq === props.fallen,
       legal: props.targets.get(sq),
       dragging: sq === drag.value?.from,
       over: !!drag.value && sq === drag.value.over && sq !== drag.value.from,

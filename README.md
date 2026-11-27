@@ -17,6 +17,13 @@ Scores screen shows a table of all players and each pair's head-to-head record, 
 export the scores to a file, import a file (games already there are skipped), remove a single game, reset one pair or
 reset everything.
 
+## Install
+
+It is a PWA, so it installs as an app from https://checkmates.ronit.io/ and then runs full screen and offline:
+
+- **iPad / iPhone** (Safari): Share, then Add to Home Screen.
+- **Android** (Chrome): menu, then Install app (or Add to Home screen).
+
 ## Develop
 
 ```sh
