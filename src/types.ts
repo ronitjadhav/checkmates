@@ -11,6 +11,8 @@ export interface Settings {
   colour: ColourChoice
   rotate: boolean
   hints: boolean
+  /** Pieces can be dragged as well as tapped. On unless switched off, so older saves keep it. */
+  drag?: boolean
   /** Players sit on opposite sides of a flat device: pieces that read the same from both sides, and the far player's bar turned to face them. On unless switched off. */
   faceToFace?: boolean
   /** Which player got white once a toss is resolved. */

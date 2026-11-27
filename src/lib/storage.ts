@@ -10,6 +10,8 @@ export interface Saved {
   pgn?: string
   /** Identifies the game in progress in the scores, so finishing it twice counts once. */
   id?: string
+  /** Colour that resigned; the game is over and the other side won. */
+  resigned?: 'w' | 'b'
 }
 
 // Storage can be blocked by privacy settings, so every access is guarded.

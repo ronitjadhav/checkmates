@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import type { ColourChoice, Settings } from '../types'
 import ChessPiece from './ChessPiece.vue'
 import SegmentedControl from './SegmentedControl.vue'
@@ -22,11 +22,14 @@ const form = reactive({
   rotate: props.initial?.rotate ?? false,
   hints: props.initial?.hints ?? true,
   faceToFace: props.initial?.faceToFace ?? true,
+  drag: props.initial?.drag ?? true,
 })
+
+const settingsOpen = ref(false)
 
 function submit() {
   const white = form.colour === 'toss' ? (crypto.getRandomValues(new Uint8Array(1))[0] < 128 ? 'p1' : 'p2') : form.colour === 'p1white' ? 'p1' : 'p2'
-  emit('start', { p1: form.p1.trim() || 'Player 1', p2: form.p2.trim() || 'Player 2', colour: form.colour, rotate: form.rotate && !form.faceToFace, faceToFace: form.faceToFace, hints: form.hints, white })
+  emit('start', { p1: form.p1.trim() || 'Player 1', p2: form.p2.trim() || 'Player 2', colour: form.colour, rotate: form.rotate && !form.faceToFace, faceToFace: form.faceToFace, hints: form.hints, drag: form.drag, white })
 }
 </script>
 
@@ -36,17 +39,26 @@ function submit() {
       <ChessPiece color="w" type="n" class="h-[1.3em] w-[1.3em]" />Checkmates
     </h1>
     <form class="grid w-full max-w-[380px] gap-3" autocomplete="off" @submit.prevent="submit">
-      <label class="field">Player 1{{ form.faceToFace ? ' · this side' : '' }} <input v-model="form.p1" type="text" maxlength="20" placeholder="Player 1" list="players" class="input"></label>
-      <label class="field">Player 2{{ form.faceToFace ? ' · opposite side' : '' }} <input v-model="form.p2" type="text" maxlength="20" placeholder="Player 2" list="players" class="input"></label>
-      <datalist id="players"><option v-for="name in players" :key="name" :value="name" /></datalist>
-      <div class="field">Player 1 plays <SegmentedControl v-model="form.colour" :options="COLOURS" label="Player 1 plays" /></div>
-      <ToggleSwitch v-model="form.faceToFace">Face to face (sitting opposite)</ToggleSwitch>
-      <ToggleSwitch v-if="!form.faceToFace" v-model="form.rotate">Rotate board each turn</ToggleSwitch>
-      <ToggleSwitch v-model="form.hints">Show legal moves</ToggleSwitch>
-      <button type="submit" class="mt-1.5 rounded-[10px] bg-accent px-4 py-3.5 text-lg font-semibold text-[#1b1b1b] shadow-[0_4px_0_var(--color-accent-dark)] active:translate-y-0.5 active:shadow-[0_2px_0_var(--color-accent-dark)]">
-        Start game
-      </button>
-      <button type="button" class="btn" @click="emit('scores')">Scores</button>
+      <template v-if="!settingsOpen">
+        <label class="field">Player 1{{ form.faceToFace ? ' · this side' : '' }} <input v-model="form.p1" type="text" maxlength="20" placeholder="Player 1" list="players" class="input"></label>
+        <label class="field">Player 2{{ form.faceToFace ? ' · opposite side' : '' }} <input v-model="form.p2" type="text" maxlength="20" placeholder="Player 2" list="players" class="input"></label>
+        <datalist id="players"><option v-for="name in players" :key="name" :value="name" /></datalist>
+        <div class="field">Player 1 plays <SegmentedControl v-model="form.colour" :options="COLOURS" label="Player 1 plays" /></div>
+        <button type="submit" class="mt-1.5 rounded-[10px] bg-accent px-4 py-3.5 text-lg font-semibold text-[#1b1b1b] shadow-[0_4px_0_var(--color-accent-dark)] active:translate-y-0.5 active:shadow-[0_2px_0_var(--color-accent-dark)]">
+          Start game
+        </button>
+        <div class="grid grid-cols-2 gap-3">
+          <button type="button" class="btn" @click="settingsOpen = true">Settings</button>
+          <button type="button" class="btn" @click="emit('scores')">Scores</button>
+        </div>
+      </template>
+      <template v-else>
+        <ToggleSwitch v-model="form.faceToFace">Face to face (sitting opposite)</ToggleSwitch>
+        <ToggleSwitch v-if="!form.faceToFace" v-model="form.rotate">Rotate board each turn</ToggleSwitch>
+        <ToggleSwitch v-model="form.hints">Show legal moves</ToggleSwitch>
+        <ToggleSwitch v-model="form.drag">Drag and drop (tap to move always works)</ToggleSwitch>
+        <button type="button" class="btn mt-1.5" @click="settingsOpen = false">Done</button>
+      </template>
     </form>
   </section>
 </template>

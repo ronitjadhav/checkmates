@@ -13,6 +13,8 @@ const props = defineProps<{
   selected: boolean
   last: boolean
   check: boolean
+  /** King has lost (mated or resigned): it tips over. */
+  mate?: boolean
   /** Legal destination from the selected piece (always known, drawn only when hints are on). */
   legal?: Target
   hints: boolean
@@ -34,7 +36,7 @@ const label = computed(() =>
     type="button"
     class="sq"
     :data-sq="sq"
-    :class="{ light, selected, last, check, dragging, over, target: hints && legal && !legal.capture, capture: hints && legal?.capture }"
+    :class="{ light, selected, last, check, mate, dragging, over, target: hints && legal && !legal.capture, capture: hints && legal?.capture }"
     :aria-label="label"
     :aria-pressed="selected || undefined"
     @click="$emit('tap')"
@@ -52,6 +54,9 @@ const label = computed(() =>
 .sq.target::after { content: ''; position: absolute; inset: 0; margin: auto; width: 32%; height: 32%; border-radius: 50%; background: rgba(0, 0, 0, .17); }
 .sq.capture::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 5px solid rgba(0, 0, 0, .17); border-width: 1.1cqw; }
 .sq :deep(.piece) { position: absolute; inset: -2%; width: 104%; height: 104%; pointer-events: none; }
+.sq.mate :deep(.piece) { transform-origin: 50% 90%; animation: topple .7s .25s cubic-bezier(.5, 0, 1, .6) both; }
+@keyframes topple { to { transform: rotate(90deg) translateY(8%); opacity: .75; } }
+@media (prefers-reduced-motion: reduce) { .sq.mate :deep(.piece) { animation: none; transform: rotate(90deg); } }
 .sq.dragging :deep(.piece) { opacity: .3; }
 .sq.over { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .8); box-shadow: inset 0 0 0 max(3px, .6cqw) rgba(255, 255, 255, .8); }
 .sq:focus-visible { outline: 3px solid #1b1b1b; outline-offset: -3px; z-index: 1; }

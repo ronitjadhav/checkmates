@@ -75,4 +75,27 @@ describe('useGame', () => {
     await g.tap('h4', never)
     expect(scores.games.value).toHaveLength(1)
   })
+
+  it('lets a player resign, scores it and takes it back on undo', async () => {
+    const scores = useScores()
+    scores.reset()
+    const g = useGame()
+    g.start(settings) // Bob has white
+    g.resign('b')
+    expect(g.gameOver).toBe(false) // nothing to resign before the first move
+    await g.tap('e2', never)
+    await g.tap('e4', never)
+    g.resign('b')
+    expect(g.gameOver).toBe(true)
+    expect(g.outcome).toBe('w')
+    expect(g.status).toBe('Ann resigned · Bob wins')
+    expect(g.fallenKing).toBe('e8')
+    expect(scores.games.value).toMatchObject([{ white: 'Bob', black: 'Ann', result: 'w' }])
+    await g.tap('e7', never)
+    expect(g.selected).toBeNull()
+    g.undo() // takes back the resignation, not the move
+    expect(g.gameOver).toBe(false)
+    expect(g.lastMove?.san).toBe('e4')
+    expect(scores.games.value).toEqual([])
+  })
 })
